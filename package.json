@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "card-validator": "^9.1.0",
+    "cors": "^2.8.5"
+  }
+}
