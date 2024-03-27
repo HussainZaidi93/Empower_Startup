@@ -1,0 +1,1 @@
+export { default as supplierOne } from './supplier1.jpeg';
