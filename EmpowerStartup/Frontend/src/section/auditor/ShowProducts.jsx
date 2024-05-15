@@ -27,7 +27,6 @@ const ShowProducts = ({ product, onAudit }) => {
         onAudit(auditData);
         toggleDialog();
     };
-    console.log("ssdgsgfs", product)
     return (
         <div>
             <img src={`${baseURL}/uploads/${product[0]?.variants[0]?.image}`} alt="Product" width={200} height={200}/>
