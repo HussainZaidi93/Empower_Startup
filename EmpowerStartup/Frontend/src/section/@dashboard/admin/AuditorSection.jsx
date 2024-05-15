@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { MaterialReactTable } from 'material-react-table';
-import { AccountCircleOutlined, AssignmentInd, Delete, Edit, NoAccounts } from '@mui/icons-material';
+import { AccountCircleOutlined, AssignmentInd, Delete, Edit, NoAccounts, VerifiedUser } from '@mui/icons-material';
 import AssignAuditorDialog from './components/AssignAuditorDialog';
 import { UpsertUserDetailsDialog } from '.';
 import {
@@ -14,6 +14,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { Post } from 'src/actions/API/apiActions';
 import ActionConfirmationDialog from 'src/components/ActionConfrimationDialog';
+import ShowPlacedAuditsDialog from './components/ShowPlacedAuditsDialog';
 
 // Columns
 const columns = [
@@ -64,7 +65,6 @@ export default function AuditorSection() {
   const [totalRowCount] = useState(50); // Total number of rows
   const [openAssignAuditorDialog, setOpenAssignAuditorDialog] = useState(false);
 
-
   //table states
   const [rows, setRows] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -80,7 +80,7 @@ export default function AuditorSection() {
   const [openDeleteAuditor, setOpenDeleteAuditor] = useState(false);
   const [deleteAuditor, setDeleteAuditor] = useState(null);
   const [selectedAuditor, setSelectedAuditor] = useState(null);
-
+  const [openShowPlacedAuditDialog, setopenShowPlacedAuditDialog] = useState(false);
   const getRoleBasedUsers = useCallback(async () => {
     setLoadingData(true);
     try {
@@ -93,7 +93,6 @@ export default function AuditorSection() {
         },
         Post_GetRoleBasedUser_URL,
         (resp) => {
-          console.log('auditors', resp.data.users);
           setIsError(false);
           setLoadingData(false);
           setRows(resp?.data?.users);
@@ -142,7 +141,6 @@ export default function AuditorSection() {
           }
         },
         (error) => {
-          console.log('errr', error);
           setOpenAddAuditorDialog(false);
           actions.setSubmitting(false);
 
@@ -174,7 +172,6 @@ export default function AuditorSection() {
   };
 
   const handleUserStatusToggle = (user, status) => {
-    console.log("user", user);
     try {
       Post(
         { userId: user, status: status },
@@ -237,7 +234,7 @@ export default function AuditorSection() {
         // onPageChange={(newPage) => setCurrentPage(newPage)}
         positionToolbarAlertBanner="top"
         renderRowActions={({ row, table }) => (
-          <Box sx={{ display: 'flex', gap: '1rem' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <Tooltip arrow placement="left" title="Edit">
               <IconButton
                 color="info"
@@ -266,6 +263,14 @@ export default function AuditorSection() {
                 setOpenAssignAuditorDialog(true)
               }}>
                 <AssignmentInd />
+              </IconButton>
+            </Tooltip>
+            <Tooltip arrow placement="right" title="Placed Audits">
+              <IconButton color="success" onClick={() => {
+                setSelectedAuditor(row?.original)
+                setopenShowPlacedAuditDialog(true)
+              }}>
+                <VerifiedUser />
               </IconButton>
             </Tooltip>
             {row.original.isAdminApproved === true ? (
@@ -306,9 +311,9 @@ export default function AuditorSection() {
         )}
       />
 
-      <AssignAuditorDialog open={openAssignAuditorDialog} onClose={() => setOpenAssignAuditorDialog(false)}
+      {openAssignAuditorDialog && <AssignAuditorDialog open={openAssignAuditorDialog} onClose={() => setOpenAssignAuditorDialog(false)}
         selectedAuditor={selectedAuditor} role='Auditor'
-      />
+      />}
 
       <UpsertUserDetailsDialog
         open={openAddAuditorDialog}
@@ -328,6 +333,9 @@ export default function AuditorSection() {
         actionCancellationText="No"
         onSubmit={() => handleDeleteAuditor()}
       />
+      {openShowPlacedAuditDialog &&
+        <ShowPlacedAuditsDialog open={openShowPlacedAuditDialog} onClose={() => setopenShowPlacedAuditDialog(false)} auditorId={selectedAuditor?._id} />
+      }
     </>
   );
 }
