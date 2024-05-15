@@ -7,7 +7,6 @@ import { Post } from 'src/actions/API/apiActions';
 import ShowProducts from './ShowProducts';
 
 function PlaceAuditDialog({ open, onClose, startupToAudit }) {
-  console.log("jdfdfdf", startupToAudit)
   const { enqueueSnackbar } = useSnackbar();
   const [revenue, setRevenue] = useState('');
   const [sales, setSales] = useState('');
@@ -61,7 +60,6 @@ function PlaceAuditDialog({ open, onClose, startupToAudit }) {
         { userId: startupToAudit?.userId },
         Post_GetConfirmedOrdersByUserIdForAudit_URL,
         (resp) => {
-          console.log("jshfsdfsd", resp?.data)
           setConfirmedOrders(resp?.data?.confirmedOrders);
         },
         (error) => {
@@ -74,10 +72,9 @@ function PlaceAuditDialog({ open, onClose, startupToAudit }) {
   }, [startupToAudit]);
 
   useEffect(() => {
-    getConfirmedOrders();
+    getConfirmedOrders();   
   }, [getConfirmedOrders]);
 
-  console.log("jhsfdsfdsfdsf", confirmedOrders)
   return (
     <Dialog open={open} onClose={onClose} maxWidth>
       <DialogTitle>
@@ -90,10 +87,8 @@ function PlaceAuditDialog({ open, onClose, startupToAudit }) {
       </DialogTitle>
       <DialogContent>
         <div>
-          {console.log("hjadfdfdsf", confirmedOrders)}
-          {confirmedOrders.length > 0 &&
+          {confirmedOrders?.length > 0 &&
             <ShowProducts product={confirmedOrders[0]?.products} onAudit={(audit) => {
-              console.log("hjsdfdsfdsf", audit)
               enqueueSnackbar("Audit Placed", { variant: 'success' })
             }} />
           }
