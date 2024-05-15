@@ -60,7 +60,6 @@ function AdminDashboardSection(props) {
                 {},
                 Post_GetSummaryDashboard_URL,
                 resp => {
-                    console.log("hgsdfdsfdsfds", resp?.data?.summary)
                     setsummary(resp?.data?.summary)
                 },
                 error => {
@@ -74,10 +73,9 @@ function AdminDashboardSection(props) {
     const getStartupsWithoutPagination = useCallback(() => {
         try {
             Post(
-                { role: "Admin" },
+                { role: "Admin", status: true },
                 Post_GetAllStartupsWithoutPagination_URL,
                 resp => {
-                    console.log("hgsdfdsfdsfds", resp?.data?.startups)
                     setRecentStartups(resp?.data?.startups)
                 },
                 error => {
@@ -94,7 +92,6 @@ function AdminDashboardSection(props) {
                 { role: "Admin" },
                 Post_GetAllStartupSalesReport_URL,
                 resp => {
-                    console.log("hgsdfdsfdsfds", resp?.data?.salesSummary)
                     setSalesSummary(resp?.data?.salesSummary)
                 },
                 error => {
@@ -109,7 +106,7 @@ function AdminDashboardSection(props) {
         getStartupsWithoutPagination()
         getSummaryDashBaord()
         getAllStartupSalesReport()
-    }, [getStartupsWithoutPagination, getSummaryDashBaord,getAllStartupSalesReport])
+    }, [getStartupsWithoutPagination, getSummaryDashBaord, getAllStartupSalesReport])
 
     return (
         <div>
