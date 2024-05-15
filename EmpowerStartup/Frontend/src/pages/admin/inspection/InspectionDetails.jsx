@@ -165,6 +165,8 @@ function InspectionDetails() {
         open={viewStartupDetails}
         onClose={() => setViewStartupDetails(false)}
         startupDetails={selectedStartupToView}
+        onStatusImageStatusChange={()=>getAllStartups()}
+
       /> 
 
       {/* <ActionConfirmationDialog
