@@ -8,7 +8,7 @@ function InspectionHomePage(props) {
       <Helmet>
         <title> Startup List | SE </title>
       </Helmet>
-      <StartupsPage role='Inspector'/>
+      <StartupsPage userRole='Inspector'/>
     </div>
   );
 }
