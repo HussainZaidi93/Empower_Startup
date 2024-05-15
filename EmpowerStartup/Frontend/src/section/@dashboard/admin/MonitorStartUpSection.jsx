@@ -64,7 +64,6 @@ export default function DonationsSection() {
         },
         Post_GetAllStartupsWithPagination_URL,
         (resp) => {
-          console.log('hjsdfsdfdsf', resp?.data);
           setRows(resp?.data?.startups);
           setIsError(false);
           setLoadingData(false);
@@ -85,7 +84,7 @@ export default function DonationsSection() {
 
   useEffect(() => {
     getAllStartupsWithPagination();
-  }, []);
+  }, [getAllStartupsWithPagination]);
 
   const handleOpenDialog = () => {
     setOpenDialog(true);
@@ -104,9 +103,7 @@ export default function DonationsSection() {
     setPhases(updatedPhases);
   };
   
-  console.log("jhdfdfdf", selectedStartup)
   const handleSubmitPhases = () => {
-    console.log("jgsdfsdfdsfdsf", selectedStartup, phases)
     const formattedPhases = phases.map((phase, index) => ({
       phaseNumber: index + 1,
       deadline: new Date(phase.deadline),
@@ -144,15 +141,15 @@ export default function DonationsSection() {
       <MaterialReactTable
         columns={columns}
         data={rows}
-        displayColumnDefOptions={{
-          'mrt-row-actions': {
-            muiTableHeadCellProps: {
-              align: 'center',
-            },
-            size: 100,
-          },
-        }}
-        enableRowActions
+        // displayColumnDefOptions={{
+        //   'mrt-row-actions': {
+        //     muiTableHeadCellProps: {
+        //       align: 'center',
+        //     },
+        //     size: 100,
+        //   },
+        // }}
+        // enableRowActions
         manualPagination
         onPaginationChange={setPagination}
         manualFiltering
@@ -163,81 +160,81 @@ export default function DonationsSection() {
           isLoading: loadingData,
         }}
         positionToolbarAlertBanner="bottom"
-        renderRowActions={({ row, table }) => {
-          return (
-            <Box display="flex" justifyContent="center" alignItems="center">
-              <Tooltip title="Create phases">
-                <IconButton
-                  color="success"
-                  onClick={() => {
-                    setSelectedStartup(row.original);
-                    handleOpenDialog();
-                  }}
-                >
-                  <NaturePeople />
-                </IconButton>
-              </Tooltip>
-              <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth>
-                <DialogTitle>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="h4">Create Phases </Typography>
-                    <IconButton onClick={() => setOpenDialog(false)}>
-                      <Close />
-                    </IconButton>
-                  </Box>
-                </DialogTitle>
-                <DialogContent>
-                  {phases.map((phase, index) => (
-                    <Box key={index} mb={2}>
-                      <Typography variant="subtitle1">Phase {index + 1}</Typography>
-                      <TextField
-                        size="small"
-                        label="Target Sale"
-                        type="number"
-                        value={phases[index].targetSale}
-                        onChange={(e) => handlePhaseChange(index, 'targetSale', e.target.value)}
-                        fullWidth
-                        margin="normal"
-                      />
+        // renderRowActions={({ row, table }) => {
+        //   return (
+        //     <Box display="flex" justifyContent="center" alignItems="center">
+        //       <Tooltip title="Create phases">
+        //         <IconButton
+        //           color="success"
+        //           onClick={() => {
+        //             setSelectedStartup(row.original);
+        //             handleOpenDialog();
+        //           }}
+        //         >
+        //           <NaturePeople />
+        //         </IconButton>
+        //       </Tooltip>
+        //       <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth>
+        //         <DialogTitle>
+        //           <Box display="flex" justifyContent="space-between">
+        //             <Typography variant="h4">Create Phases </Typography>
+        //             <IconButton onClick={() => setOpenDialog(false)}>
+        //               <Close />
+        //             </IconButton>
+        //           </Box>
+        //         </DialogTitle>
+        //         <DialogContent>
+        //           {phases.map((phase, index) => (
+        //             <Box key={index} mb={2}>
+        //               <Typography variant="subtitle1">Phase {index + 1}</Typography>
+        //               <TextField
+        //                 size="small"
+        //                 label="Target Sale"
+        //                 type="number"
+        //                 value={phases[index].targetSale}
+        //                 onChange={(e) => handlePhaseChange(index, 'targetSale', e.target.value)}
+        //                 fullWidth
+        //                 margin="normal"
+        //               />
 
-                      <TextField
-                        size="small"
-                        label="Deadline"
-                        type="date"
-                        value={phases[index].deadline}
-                        onChange={(e) => handlePhaseChange(index, 'deadline', e.target.value)}
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                        fullWidth
-                        margin="normal"
-                      />
-                    </Box>
-                  ))}
-                </DialogContent>
-                <Box display="flex" justifyContent="center">
-                  <Button
-                    onClick={handleSubmitPhases}
-                    sx={{
-                      backgroundColor: '#04B17C',
-                      color: 'white',
-                      padding: '5px',
-                      '&:hover': {
-                        backgroundColor: '#04B17C',
-                      },
-                      borderRadius: '5px',
-                      fontSize: '15px',
-                      width: '10ch',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Box>
-              </Dialog>
-            </Box>
-          );
-        }}
+        //               <TextField
+        //                 size="small"
+        //                 label="Deadline"
+        //                 type="date"
+        //                 value={phases[index].deadline}
+        //                 onChange={(e) => handlePhaseChange(index, 'deadline', e.target.value)}
+        //                 InputLabelProps={{
+        //                   shrink: true,
+        //                 }}
+        //                 fullWidth
+        //                 margin="normal"
+        //               />
+        //             </Box>
+        //           ))}
+        //         </DialogContent>
+        //         <Box display="flex" justifyContent="center">
+        //           <Button
+        //             onClick={handleSubmitPhases}
+        //             sx={{
+        //               backgroundColor: '#04B17C',
+        //               color: 'white',
+        //               padding: '5px',
+        //               '&:hover': {
+        //                 backgroundColor: '#04B17C',
+        //               },
+        //               borderRadius: '5px',
+        //               fontSize: '15px',
+        //               width: '10ch',
+        //               marginBottom: '1rem',
+        //             }}
+        //           >
+        //             Submit
+        //           </Button>
+        //         </Box>
+        //       </Dialog>
+        //     </Box>
+        //   );
+        // }}
       />
     </>
   );
