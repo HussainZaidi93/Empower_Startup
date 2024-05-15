@@ -24,14 +24,32 @@ exports.getSummaryDashboard = async (req, res) => {
   }
 };
 
+
 exports.getAllStartupSalesReport = async (req, res) => {
   try {
-    // Aggregate sales data to group by startup and calculate total sales
     const salesSummary = await Sales.aggregate([
       {
         $group: {
-          _id: "$startup",
+          _id: "$userId",
           totalSales: { $sum: "$sales" }
+        }
+      },
+      {
+        $lookup: {
+          from: "startups",
+          localField: "_id",
+          foreignField: "userId",
+          as: "startupData"
+        }
+      },
+      {
+        $unwind: "$startupData" // Unwind the array to access fields of startupData
+      },
+      {
+        $project: {
+          _id: 1,
+          totalSales: 1,
+          startupName: "$startupData.firstName" // Assuming firstName contains the startupName
         }
       }
     ]);
@@ -42,5 +60,57 @@ exports.getAllStartupSalesReport = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
+// exports.getAllStartupSalesReport = async (req, res) => {
+//   try {
+//     const salesSummary = await Sales.aggregate([
+//       {
+//         $group: {
+//           _id: "$userId",
+//           totalSales: { $sum: "$sales" }
+//         }
+//       },
+//       {
+//         $lookup: {
+//           from: "startups",
+//           localField: "_id",
+//           foreignField: "userId",
+//           as: "startupData"
+//         }
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           totalSales: 1,
+//           startupName: { $arrayElemAt: ["$startupData.startupName", 0] }
+//         }
+//       }
+//     ]);
+
+//     // Populate startup field in salesSummary
+//     const populatedSalesSummary = await Sales.populate(salesSummary, { path: 'startupId', select: 'startupName' });
+
+//     return res.status(200).json({ salesSummary: populatedSalesSummary });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ error: "Internal Server Error" });
+//   }
+//   // try {
+//   //   // Aggregate sales data to group by startup and calculate total sales
+//   //   const salesSummary = await Sales.aggregate([
+//   //     {
+//   //       $group: {
+//   //         _id: "$userId",
+//   //         totalSales: { $sum: "$sales" }
+//   //       }
+//   //     }
+//   //   ]);   
+
+//   //   return res.status(200).json({ salesSummary });
+//   // } catch (error) {
+//   //   console.error(error);
+//   //   return res.status(500).json({ error: "Internal Server Error" });
+//   // }
+// }
 
 // Call the summary function wherever needed, and await its result if necessary
