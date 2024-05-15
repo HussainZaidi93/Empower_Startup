@@ -1,88 +1,125 @@
-import { Autocomplete, Box, TextField, Typography } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Post } from 'src/actions/API/apiActions';
-import { Post_GetSalesReport_URL } from 'src/constants/apiURLs';
+
+import {  Typography } from '@mui/material';
+import { MaterialReactTable } from 'material-react-table';
 import { useSnackbar } from 'notistack';
-import { BarChartComponent } from '.';
+import { useCallback, useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { Post } from 'src/actions/API/apiActions';
+import { Post_GetAllOrderByUserWithPagination_URL } from 'src/constants/apiURLs';
 
-function StartupProgress(props) {
+// Columns
+const columns = [
+  {
+    accessorKey: 'user.firstName',
+    header: 'First Name',
+    size: 40,
+  },
+  {
+    accessorKey: 'user.lastName',
+    header: 'Last Name',
+    size: 40,
+  },
+
+  {
+    accessorKey: 'user.phone',
+    header: 'Phone',
+    size: 40,
+  },
+  {
+    accessorKey: 'totalPayment',
+    header: 'Payment',
+    size: 40,
+  },
+  {
+    accessorKey: 'status',
+    header: 'Startup Status',
+    size: 40,
+    // Cell: ({ cell }) => <Box component="span">{cell.getValue() === true ? 'Approved' : 'Not Approved'}</Box>,
+  },
+];
+
+function OrderDetails(props) {
   const { enqueueSnackbar } = useSnackbar();
-  const progressDurationOptions = ['Weekly', 'Monthly', 'Annually'];
-  const [progressType, setProgressType] = useState('Weekly');
-  const [salesData, setSalesData] = useState([]);
 
-  const handleGetSalesProgress = useCallback(() => {
+  // table State
+  const [rows, setRows] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [searchString, setSearchString] = useState('');
+
+  const getSupplierOrders = useCallback(async () => {
+    setLoadingData(true);
     try {
-      // Make a POST request to fetch sales progress
       Post(
-        { interval: progressType }, // Pass the interval as data to the POST request
-        Post_GetSalesReport_URL,
+        {
+          pageSize: pagination?.pageSize,
+          pageNumber: pagination?.pageIndex,
+          searchString: searchString,
+          _id: localStorage.getItem('userId'),
+        },
+        Post_GetAllOrderByUserWithPagination_URL,
         (resp) => {
-          setSalesData(resp?.data?.data);
-          // Process the response
-          console.log('Sales progress data:', resp?.data?.data);
-          // Handle the sales progress data as needed (e.g., update the chart)
+          setRows(resp.data.orders);
+          setIsError(false);
+          setLoadingData(false);
+          setTotalCount(resp?.data.totalCount);
         },
         (error) => {
-          console.log('Error:', error);
-          enqueueSnackbar('Failed to fetch sales progress', { variant: 'error' });
+          setLoadingData(false);
+          setIsError(true);
+          enqueueSnackbar('Something went wrong', { variant: 'error' });
         }
       );
     } catch (error) {
-      console.error('Error:', error);
-      enqueueSnackbar('Something went wrong while fetching sales progress', { variant: 'error' });
+      setLoadingData(false);
+      setIsError(true);
+      enqueueSnackbar('Something went wrong', { variant: 'error' });
     }
-  },[progressType,enqueueSnackbar]);
+  }, [pagination.pageSize, pagination.pageIndex, searchString, enqueueSnackbar]);
 
   useEffect(() => {
-    handleGetSalesProgress();
-  }, [handleGetSalesProgress]);
+    getSupplierOrders();
+  }, []);
 
   return (
     <div>
-      <Box display="flex" justifyContent="space-between" marginLeft="5rem" marginRight="2rem">
-        <Typography variant="h6">Sale Progress</Typography>
-        <Typography variant="h6">
-          Progress Status: <span style={{ color: '#0685BB' }}>&nbsp;Phase 1</span>
-        </Typography>
-      </Box>
-      <br />
-      <Box display="flex" justifyContent="space-between" marginLeft="5rem" marginRight="5rem">
-        <Autocomplete
-          id="progress"
-          fullWidth
-          size="small"
-          value={progressType}
-          sx={{ m: 1, marginTop: '20px', width: '55ch' }}
-          options={progressDurationOptions}
-          getOptionLabel={(option) => option}
-          onChange={(event, newValue) => {
-            if (newValue) {
-              setProgressType(newValue);
-            } else {
-              setProgressType('Weekly');
-            }
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Select Duration"
-              variant="outlined"
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-          )}
-        />
-      </Box>
-      <br />
-      <div style={{
-        margin: '2rem'
-      }}>
-      <BarChartComponent salesData={salesData} type="line"/>
-      </div>
+      <Helmet>
+        <title> Startup History | SE </title>
+      </Helmet>
+      <Typography variant="h4" ml={2}>
+        Orders History
+      </Typography>
+      <MaterialReactTable
+        enableGrouping
+        columns={columns || {}}
+        data={rows || []}
+        rowCount={totalCount || 0}
+        manualPagination
+        onPaginationChange={setPagination}
+        manualFiltering
+        onGlobalFilterChange={setSearchString}
+        state={{
+          pagination,
+          searchString,
+          isLoading: loadingData,
+        }}
+        muiToolbarAlertBannerProps={
+          isError
+            ? {
+                color: 'error',
+                children: 'Error Loading Data',
+              }
+            : undefined
+        }
+
+      />
     </div>
   );
 }
 
-export default StartupProgress;
+export default OrderDetails;
