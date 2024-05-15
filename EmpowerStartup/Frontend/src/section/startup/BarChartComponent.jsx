@@ -1,8 +1,7 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 
-function BarChartComponent({ salesData,type }) {
-  console.log("Sales Data:", salesData);
+function BarChartComponent({ salesData }) {
   let xAxisData = [];
   let seriesData = [];
 
