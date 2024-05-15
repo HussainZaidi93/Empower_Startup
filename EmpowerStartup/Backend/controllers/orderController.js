@@ -1,6 +1,7 @@
 const { Products, User, Orders, Sales, Startup } = require("../models/db.schemas");
 const mongoose = require("mongoose");
-
+const { sendPhaseChangeEmail } = require("../utils/sendEmail");
+const ObjectId = mongoose.Types.ObjectId;
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -51,8 +52,7 @@ exports.createOrder = async (req, res) => {
             });
         }
 
-        // Reduce the quantity of the variant
-        product.variants[variantIndex].quantity -= quantity;
+        product.variants[variantIndex].quantity += orderedQuantity;
 
         // Update the image and sale fields in the variant
         product.variants[variantIndex].image = image;
@@ -95,75 +95,109 @@ exports.createOrder = async (req, res) => {
 
 exports.changeStatus = async (req, res) => {
   try {
-    const { orderId, newStatus,userId } = req.body;
+    const { orderId, newStatus, userId } = req.body;
 
-    // Check if the order exists for the given user
+    // Validate input parameters
+    if (!orderId || !newStatus || !userId) {
+      return res.status(400).json({ error: "Missing required parameters" });
+    }
+
+    // Fetch the order
     const order = await Orders.findOne({ _id: orderId, user: userId });
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    // Check if the order status was pending and the new status is confirmed
     if (order.status === 'Pending' && newStatus === 'Confirmed') {
-      // Find existing confirmed orders for the user with the same products
+      // Fetch existing confirmed orders
       const existingOrders = await Orders.find({
         user: userId,
-        status: 'Confirmed',
-        'products._id': { $in: order.products.map(product => product._id) }
+        status: 'Confirmed'
       });
 
-      for (const existingOrder of existingOrders) {
-        let matchingProducts = 0;
-        for (const product of order.products) {
+      // Track which products are merged and which are new
+      const mergedProducts = [];
+      const newProducts = [];
+
+      // Iterate over products in the pending order
+      for (const product of order.products) {
+        let productMerged = false;
+
+        // Check if product exists in any confirmed order
+        for (const existingOrder of existingOrders) {
           const existingProduct = existingOrder.products.find(p => p._id.equals(product._id));
           if (existingProduct) {
-            const matchingVariants = product.variants.filter(variant => {
-              const existingVariant = existingProduct.variants.find(v => v._id.equals(variant._id) && v.size === variant.size);
-              return existingVariant;
-            });
-
-            if (matchingVariants.length === product.variants.length) {
-              matchingProducts++;
-              for (const matchingVariant of matchingVariants) {
-                const correspondingVariant = existingProduct.variants.find(v => v._id.equals(matchingVariant._id) && v.size === matchingVariant.size);
-                correspondingVariant.orderedQuantity += matchingVariant.orderedQuantity;
-                existingOrder.totalPayment += matchingVariant.variantPrice * matchingVariant.orderedQuantity;
+            // Merge variants
+            for (const variant of product.variants) {
+              const existingVariant = existingProduct.variants.find(v =>
+                v._id.equals(variant._id) && v.size === variant.size
+              );
+              if (existingVariant) {
+                existingVariant.orderedQuantity += variant.orderedQuantity;
+                existingVariant.quantity += variant.orderedQuantity;
+              } else {
+                existingProduct.variants.push(variant);
               }
             }
+
+            // Update total payment
+            existingOrder.totalPayment += order.totalPayment;
+            await existingOrder.save();
+            mergedProducts.push(product._id);
+            productMerged = true;
+            break; // Move to the next product
           }
         }
 
-        if (matchingProducts === order.products.length) {
-          for (const product of order.products) {
-            const existingProduct = existingOrder.products.find(p => p._id.equals(product._id));
-            if (!existingProduct) {
-              existingOrder.products.push(product);
-              existingOrder.totalPayment += product.variants.reduce((acc, curr) => acc + (curr.variantPrice * curr.orderedQuantity), 0);
-            }
-          }
-
-          await existingOrder.save();
-          await Orders.findByIdAndDelete(orderId); // Remove the pending order
-          return res.status(200).json({ message: 'Pending order merged with existing order', order: existingOrder });
+        // If product is not merged, it's a new product
+        if (!productMerged) {
+          newProducts.push(product);
         }
       }
 
-      // If no existing confirmed orders found or no matching products/variants found, change the status of the pending order to Confirmed
-      order.status = 'Confirmed';
+      // Create new order for new products
+      if (newProducts.length > 0) {
+        const newOrder = new Orders({
+          user: userId,
+          products: newProducts,
+          supplier: order.supplier,
+          accountNumber: order.accountNumber,
+          accountTitle: order.accountTitle,
+          recieptImage: order.recieptImage,
+          address: order.address,
+          status: 'Confirmed',
+          totalPayment: order.totalPayment,
+          orderDate: new Date()
+        });
+
+        await newOrder.save();
+      }
+
+      // Delete the original pending order
+      // await Orders.findByIdAndDelete(orderId);
+
+      // Change the original pending status to processed
+      order.status = 'Processed';
       await order.save();
-      return res.status(200).json({ message: 'Pending order confirmed', order });
-    } else {
-      // If the order status was not pending or the new status is not confirmed, simply update the status
-      order.status = newStatus;
-      await order.save();
-      return res.status(200).json({ message: "Order status changed successfully", order });
+
+      return res.status(200).json({
+        message: 'Pending order merged and new orders created',
+        mergedProducts,
+        newProducts
+      });
     }
+
+    // If the order status was not pending or the new status is not confirmed, simply update the status
+    order.status = newStatus;
+    await order.save();
+    return res.status(200).json({ message: "Order status changed successfully", order });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 // Working fine irrespective of the number of products and variants in the order and user is not being managed. The code iterates through each product and variant in the request, updates the product variant quantities, and creates the order. The response includes the created order.
 // exports.changeStatus = async (req, res) => {
@@ -342,7 +376,7 @@ exports.getOrdersBySupplierId = async (req, res) => {
     const { supplierId } = req.body;
 
     const orders = await Orders.find({
-      supplierId: supplierId,
+      supplier: supplierId,
       status: "Pending",
     })
       .populate("user")
@@ -451,6 +485,8 @@ exports.confirmOrder = async (req, res) => {
       // If existing confirmed orders found, merge variants data and update the existing order
       const existingOrder = existingOrders[0];
       existingOrder.products[0].variants[0].orderedQuantity += pendingOrder.products[0].variants[0].orderedQuantity;
+      existingOrder.products[0].variants[0].quantity += pendingOrder.products[0].variants[0].orderedQuantity;
+
       existingOrder.totalPayment += pendingOrder.totalPayment;
       await existingOrder.save();
       return res.status(200).json({ message: 'Pending order merged with existing order.' });
@@ -474,17 +510,13 @@ exports.confirmOrder = async (req, res) => {
 //     if (!order) {
 //       return res.status(404).json({ error: "Order not found" });
 //     }
-//     // console.log("ordewr", order, productId);
-
 //     let productInOrder;
 //     for (const product of order.products) {
 //       if (product.id.toString() === productId) {
 //         productInOrder = product;
 //         break;
 //       }
-//     }
-//     // console.log("dwrewrwe", productInOrder);
-//     if (!productInOrder) {
+//     }//     if (!productInOrder) {
 //       return res.status(404).json({ error: "Product not found in the order" });
 //     }
 
@@ -527,12 +559,10 @@ exports.getConfirmedOrdersByUserIdV1 = async (req, res) => {
             { path: "subCategory", select: "name" }, // Populate subCategory and select the name field
             { path: "productType", select: "name" }, // Populate productType and select the name field
           ],
-          select: "productName productType variants", // Select the required fields for products
+          select: "_id productName productType variants", // Select the required fields for products
         },
       })
       .populate("supplier", "firstName lastName email phone"); // Populate supplier for each order
-
-    // console.log("confirmedorders", confirmedOrders);
     const mergedVariants = {};
 
     confirmedOrders?.forEach((order) => {
@@ -663,8 +693,6 @@ exports.getConfirmedOrdersByUserId = async (req, res) => {
       })
       .populate("supplier", "firstName lastName email phone"); // Populate supplier for each order
 
-    console.log("confirmedorders", confirmedOrders);
-
     return res.status(200).json({
       confirmedOrders,
     });
@@ -678,12 +706,10 @@ exports.getConfirmedOrdersByUserIdForAudit = async (req, res) => {
     const { user } = req.body
     // Query the database for orders with the status "Confirmed" and populate the products field
     const confirmedOrders = await Orders.find({ status: 'Confirmed', user: user })
-      .populate({
-        path: 'products._id',
-        model: 'product',
-        select: 'productName'
-      })
-      .exec();
+    .populate({
+      path: 'products._id'
+    })
+    .exec();
 
     // Format the response to include product name and ordered variants
     const formattedOrders = confirmedOrders.map(order => {
@@ -726,11 +752,34 @@ exports.addSales = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    selectedVariants.forEach(selectedVariant => {
-      const variantIndex = order.products[0].variants.findIndex(variant => variant._id.equals(selectedVariant._id));
+  //   selectedVariants.forEach(selectedVariant => {
+  //     const variantIndex = order.products[0].variants.findIndex(variant => variant._id.equals(selectedVariant._id));
+  //     if (variantIndex !== -1) {
+  //         order.products[0].variants[variantIndex].quantitySold += selectedVariant.quantitySold;
+  //         if(order.products[0].variants[variantIndex].orderedQuantity<0){
+  //           order.products[0].variants[variantIndex].orderedQuantity = 0
+  //         }else{
+  //           order.products[0].variants[variantIndex].orderedQuantity -= selectedVariant.quantitySold;
+  //         }
+  //     }
+  // });
+
+  selectedVariants.forEach((selectedVariant) => {
+    order.products.forEach((product) => {
+      const variantIndex = product.variants.findIndex((variant) =>
+        variant._id.equals(selectedVariant._id)
+      );
       if (variantIndex !== -1) {
-          order.products[0].variants[variantIndex].quantitySold += selectedVariant.quantitySold;
+        product.variants[variantIndex].quantitySold +=
+          selectedVariant.quantitySold;
+        if (product.variants[variantIndex].orderedQuantity < 0) {
+          product.variants[variantIndex].orderedQuantity = 0;
+        } else {
+          product.variants[variantIndex].orderedQuantity -=
+            selectedVariant.quantitySold;
+        }
       }
+    });
   });
   
 
@@ -740,10 +789,14 @@ exports.addSales = async (req, res) => {
     // Save the updated order document
     await order.save();
 
+    // get startup from the user of the order
+    const startupInfo = await Startup.findOne({ userId: order.user });
     // Create a new sales document
     const newSale = new Sales({
       Date: new Date().toISOString(),
       sales: totalPrice,
+      startup: startupInfo.startupType,
+      startupId: startupInfo._id,
       orderId,
       userId: req.body._id // Assuming you have user authentication middleware
     });
@@ -758,10 +811,10 @@ exports.addSales = async (req, res) => {
       return res.status(404).json({ error: "Startup not found" });
     }
 
-    // Check if any phase needs to be upgraded based on total sales
+    // cacluate total sales of this startup user
     const totalSales = await Sales.aggregate([
       {
-        $match: { startupId: startup._id }
+        $match: { userId: new ObjectId(req.body._id) }
       },
       {
         $group: {
@@ -771,18 +824,39 @@ exports.addSales = async (req, res) => {
       }
     ]);
 
-    if (totalSales.length > 0) {
-      const salesAmount = totalSales[0].totalSales;
 
-      for (const phase of startup.phases) {
-        if (salesAmount >= phase.targetSale && phase.phaseNumber < startup.phases.length) {
-          // Upgrade the phase
-          phase.phaseNumber += 1;
-          await startup.save();
-          break; // Break loop when phase is upgraded
-        }
+    let isPhaseUpgraded = false;
+
+    // get current active phase
+    const activePhase = startup.phases.find(phase => phase.isActive);
+    if (!activePhase) {
+      return res.status(404).json({ error: "Active phase not found" });
+    }
+    // Upgrade the phase if the target sale is reached
+    if (totalSales[0].totalSales >= activePhase.targetSale) {
+      const nextPhase = startup.phases.find(phase => phase.phaseNumber === activePhase.phaseNumber + 1);
+      if (nextPhase && nextPhase.phaseNumber <= startup.phases.length) {
+        // disbale current phase and enable next phase
+        activePhase.isActive = false;
+        nextPhase.isActive = true;
+        isPhaseUpgraded = true;
       }
     }
+
+    // send email to startup user about phase upgrade
+    if (isPhaseUpgraded) {
+      // get user by userId from startup
+      const user = await User.findById(startup.userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const subject="Phase Upgrade"
+      const text = `Congratulations! Your startup ${startup.startupName} has been upgraded to phase ${startup.phases[startup.phases.length - 1].phaseNumber}`;
+      userName = user.firstName + " " + user.lastName;
+      // send email to user
+      await sendPhaseChangeEmail(user.email, userName, subject, text);
+    }
+    await startup.save();
 
     res.status(200).json({ message: 'Sales added successfully' });
   } catch (error) {
