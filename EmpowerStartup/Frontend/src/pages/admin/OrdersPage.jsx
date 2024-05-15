@@ -91,7 +91,6 @@ function Orders() {
                 },
                 Post_GetAllOrders_URL,
                 (resp) => {
-                    console.log('hjsdfsdfdsf', resp?.data);
                     setRows(resp?.data?.orders);
                     setIsError(false);
                     setLoadingData(false);
@@ -114,10 +113,9 @@ function Orders() {
         getAllDonators();
     }, []);
 
-    console.log("dasfdasfsdaf",selectedOrder);
     return (
         <>
-            <Typography variant='h6' ml={2}>Donation Articles</Typography>
+            <Typography variant='h6' ml={2}>Orders</Typography>
 
             <MaterialReactTable
                 columns={columns}
