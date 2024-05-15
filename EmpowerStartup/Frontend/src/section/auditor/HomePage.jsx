@@ -3,9 +3,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Get, Post } from 'src/actions/API/apiActions';
 import { Post_GetAllAuditorStartups_URL } from 'src/constants/apiURLs';
 import { useSnackbar } from 'notistack';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { Delete, Edit, Verified } from '@mui/icons-material';
-import { PlaceAuditDialog } from '.';
+import { AuditProductsDialog, PlaceAuditDialog } from '.';
 
 function AuditorHomeSection(props) {
   const userId = localStorage.getItem('userId');
@@ -60,24 +60,23 @@ function AuditorHomeSection(props) {
         },
         Post_GetAllAuditorStartups_URL,
         (resp) => {
-          console.log('Response from API:', resp.data);
-          setAllStartups(resp?.data.startups)
+          setAllStartups(resp?.data?.startups)
           const data = resp?.data.startups.map((startup) => ({
             startupType: startup?.startupInfo?.middleName,
             fullName: `${startup?.startupInfo?.firstName} ${startup?.startupInfo?.lastName}`,
             address: `${startup?.startupInfo?.city}, ${startup?.startupInfo?.address}`,
             date: startup?.date,
-            userId: `${startup?.startupInfo?.userId}`
+            userId: `${startup?.startupInfo?.userId}`,
+            startupId: `${startup?.startupInfo?._id}`
           }));
           setStartups(data);
           setIsError(false);
           setLoadingData(false);
-          setTotalCount(resp?.data.totalCount);
+          setTotalCount(resp?.data?.totalCount);
         },
         (error) => {
           setLoadingData(false);
           setIsError(true);
-          console.log('Error:', error);
           enqueueSnackbar(error?.response?.data?.message || 'No startups found', { variant: 'error' });
         }
       );
@@ -92,9 +91,12 @@ function AuditorHomeSection(props) {
   useEffect(() => {
     getAudits();
   }, [getAudits]);
-
+  console.log('startups', selectedStartup, startups)
   return (
     <div>
+      <Typography variant="h4" gutterBottom>
+        Auditor Home
+      </Typography>
       <MaterialReactTable
         columns={columns}
         data={startups}
@@ -123,14 +125,13 @@ function AuditorHomeSection(props) {
         }
         onPaginationChange={setPagination}
         manualFiltering
-        rowCount={totalCount || 0}
+        rowCount={totalCount}
         onGlobalFilterChange={setSearchString}
         positionToolbarAlertBanner="bottom"
         renderRowActions={({ row, table }) => (
           <Box sx={{ display: 'flex', gap: '1rem' }}>
             <Tooltip arrow placement="left" title="Place Audit">
               <IconButton color="info" onClick={() => {
-                console.log("jdsfdsfdsfds", row.original)
                 setSelectedStartup(row?.original)
                 setOpenPlaceAuditDialog(true)
               }}>
@@ -150,7 +151,17 @@ function AuditorHomeSection(props) {
           </Box>
         )}
       />
-      <PlaceAuditDialog open={openPlaceAuditDialog} onClose={() => setOpenPlaceAuditDialog(false)} startupToAudit={selectedStartup} />
+      {
+        openPlaceAuditDialog &&
+        <AuditProductsDialog
+          open={openPlaceAuditDialog}
+          onClose={() => setOpenPlaceAuditDialog(false)}
+          userId={selectedStartup !== 'undefined' && selectedStartup?.userId}
+          startupId={selectedStartup !== 'undefined' && selectedStartup?.startupId}
+        />
+      }
+
+      {/* <AuditProductsDialog/> */}
     </div>
   );
 }
