@@ -153,7 +153,6 @@ function InputInventory(props) {
 
   const findVariantSizeById = (variantId) => {
     let size = '';
-    // console.log('hsdfsdfds', products.variants[0]);
     products.forEach((product) => {
       product?.variants?.forEach((variant) => {
         if (variant?._id === variantId) {
@@ -251,7 +250,7 @@ function InputInventory(props) {
       <br />
       <Box display="flex" justifyContent="space-between">
         <Typography variant="h5" sx={{ marginLeft: '1rem' }}>
-          Inventory Management
+          Input Inventory
         </Typography>
         <div style={{ display: 'flex' }}>
           <TextField
