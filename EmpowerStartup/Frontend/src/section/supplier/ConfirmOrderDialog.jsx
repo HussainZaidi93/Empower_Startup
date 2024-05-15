@@ -42,6 +42,17 @@ function ConfirmOrderDialog({ open, onClose, order, products, onOrderConfirmed }
   const getProductInfo = (productId) => {
     return products.find((product) => product._id === productId);
   };
+
+  const calculateTotalPrice = () => {
+    return order?.products?.reduce((total, product) => {
+      return total + product?.variants?.reduce((sum, variant) => {
+        return sum + variant?.price * variant?.quantity;
+      }, 0);
+    }, 0) || 0;
+  };
+
+  const totalPrice = calculateTotalPrice();
+
   return (
     <div>
       <Dialog open={open} onClose={onClose} fullWidth>
@@ -62,7 +73,7 @@ function ConfirmOrderDialog({ open, onClose, order, products, onOrderConfirmed }
               Customer Name: {order?.user?.firstName} {order?.user?.lastName}
             </Typography>
             <Typography variant="subtitle1" sx={{ marginBottom: '5px' }}>
-              Customer phone no :: {order?.user?.phone}
+              Customer phone no: {order?.user?.phone}
             </Typography>
             <Typography variant="subtitle1" sx={{ marginBottom: '5px' }}>
               Account Title: {order?.accountTitle}
@@ -95,22 +106,26 @@ function ConfirmOrderDialog({ open, onClose, order, products, onOrderConfirmed }
           <div>
             {order?.products?.map((product, index) => {
               const productInfo = getProductInfo(product?._id);
-              return <div key={index} style={{ marginLeft: '20px' }}>
-
-                <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
-                  Product Name: {productInfo?.productName}
-                </Typography>
-                <ul>
-                  {product?.variants?.map((variant, variantIndex) => (
-                    <li key={variantIndex}>
-
-                      Quantity: {variant?.quantity}, Price: {variant?.price}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              return (
+                <div key={index} style={{ marginLeft: '20px' }}>
+                  <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>
+                    Product Name: {productInfo?.productName}
+                  </Typography>
+                  <ul>
+                    {product?.variants?.map((variant, variantIndex) => (
+                      <li key={variantIndex}>
+                        Quantity: {variant?.quantity}, Price: {variant?.price}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
             })}
           </div>
+
+          <Typography variant="subtitle1" sx={{ marginTop: '20px', fontWeight: 'bold' }}>
+            Total Price: Rs.{totalPrice.toFixed(2)}
+          </Typography>
 
           <Box display="flex" justifyContent="center">
             <Button
