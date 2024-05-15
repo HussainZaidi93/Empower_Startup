@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { MaterialReactTable } from 'material-react-table';
 import { AccountCircleOutlined, AssignmentInd, Delete, Edit, NoAccounts } from '@mui/icons-material';
-import AssignAuditorDialog from './components/AssignAuditorDialog';
 import { UpsertUserDetailsDialog } from '.';
 import {
   Post_ChangeUserStatus_URL,
@@ -14,6 +13,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { Post } from 'src/actions/API/apiActions';
 import ActionConfirmationDialog from 'src/components/ActionConfrimationDialog';
+import AssignInspectorDialog from './components/AssignInspectorDialog';
 
 // Columns
 const columns = [
@@ -51,7 +51,7 @@ export default function InspectionSection() {
   // const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10); // Number of rows per page
   const [totalRowCount] = useState(50); // Total number of rows
-  const [openAssignAuditorDialog, setOpenAssignAuditorDialog] = useState(false);
+  const [openAssignInspectorDialog, setOpenAssignInspectorDialog] = useState(false);
 
 
   //table states
@@ -64,11 +64,11 @@ export default function InspectionSection() {
     pageSize: 10,
   });
   const [searchString, setSearchString] = useState('');
-  const [openAddAuditorDialog, setOpenAddAuditorDialog] = useState(false);
-  const [editAuditorDetails, setEditAuditorDetails] = useState(null);
-  const [openDeleteAuditor, setOpenDeleteAuditor] = useState(false);
-  const [deleteAuditor, setDeleteAuditor] = useState(null);
-  const [selectedAuditor, setSelectedAuditor] = useState(null);
+  const [openAddInspectorDialog, setOpenAddInspectorDialog] = useState(false);
+  const [editInspectorDetails, setEditInspectorDetails] = useState(null);
+  const [openDeleteInspector, setOpenDeleteInspector] = useState(false);
+  const [deleteInspector, setDeleteInspector] = useState(null);
+  const [selectedInspector, setSelectedInspector] = useState(null);
 
   const getRoleBasedUsers = useCallback(async () => {
     setLoadingData(true);
@@ -104,37 +104,36 @@ export default function InspectionSection() {
     getRoleBasedUsers();
   }, [getRoleBasedUsers]);
 
-  const handleAddAuditor = (values, actions) => {
+  const handleAddInspector = (values, actions) => {
     values.role = 'Inspector';
-    if (!editAuditorDetails) {
+    if (!editInspectorDetails) {
       values.isAdminApproved = true
       values.isVarified = true
     }
     try {
       Post(
         values,
-        editAuditorDetails ? Post_UpdateUser_URL : Post_RegisterUser_URL,
+        editInspectorDetails ? Post_UpdateUser_URL : Post_RegisterUser_URL,
         (resp) => {
           // getRoleBasedUsers();
           actions.setSubmitting(false);
           actions.resetForm();
           getRoleBasedUsers();
-          setOpenAddAuditorDialog(false);
-          if (editAuditorDetails) {
+          setOpenAddInspectorDialog(false);
+          if (editInspectorDetails) {
             actions.resetForm();
-            enqueueSnackbar('Auditor details updated successfully', { variant: 'success' });
+            enqueueSnackbar('Inspector details updated successfully', { variant: 'success' });
           } else {
-            enqueueSnackbar('Auditor Added', {
+            enqueueSnackbar('Inspector Added', {
               variant: 'success',
             });
           }
         },
         (error) => {
-          console.log('errr', error);
-          setOpenAddAuditorDialog(false);
+          setOpenAddInspectorDialog(false);
           actions.setSubmitting(false);
 
-          enqueueSnackbar('Can not add auditor', { variant: 'error' });
+          enqueueSnackbar('Can not add Inspector', { variant: 'error' });
         }
       );
     } catch (error) {
@@ -142,14 +141,14 @@ export default function InspectionSection() {
     }
   };
 
-  const handleDeleteAuditor = () => {
+  const handleDeleteInspector = () => {
     try {
       Post(
-        { id: deleteAuditor?._id },
+        { id: deleteInspector?._id },
         Post_DeleteUser_URL,
         (resp) => {
           getRoleBasedUsers();
-          setOpenDeleteAuditor(false);
+          setOpenDeleteInspector(false);
           enqueueSnackbar('Inspector deleted !', { variant: 'success' });
         },
         (error) => {
@@ -162,7 +161,6 @@ export default function InspectionSection() {
   };
 
   const handleUserStatusToggle = (user, status) => {
-    console.log("user", user);
     try {
       Post(
         { userId: user, status: status },
@@ -230,8 +228,8 @@ export default function InspectionSection() {
               <IconButton
                 color="info"
                 onClick={() => {
-                  setEditAuditorDetails(row?.original);
-                  setOpenAddAuditorDialog(true);
+                  setEditInspectorDetails(row?.original);
+                  setOpenAddInspectorDialog(true);
                 }}
               >
                 <Edit />
@@ -241,8 +239,8 @@ export default function InspectionSection() {
               <IconButton
                 color="error"
                 onClick={() => {
-                  setDeleteAuditor(row?.original);
-                  setOpenDeleteAuditor(true);
+                  setDeleteInspector(row?.original);
+                  setOpenDeleteInspector(true);
                 }}
               >
                 <Delete />
@@ -250,8 +248,8 @@ export default function InspectionSection() {
             </Tooltip>
             <Tooltip arrow placement="right" title="Assign Startup">
               <IconButton color="error" onClick={() => {
-                setSelectedAuditor(row?.original)
-                setOpenAssignAuditorDialog(true)
+                setSelectedInspector(row?.original)
+                setOpenAssignInspectorDialog(true)
               }}>
                 <AssignmentInd />
               </IconButton>
@@ -285,36 +283,36 @@ export default function InspectionSection() {
               width: '13ch',
             }}
             onClick={() => {
-              setEditAuditorDetails(null);
-              setOpenAddAuditorDialog(true);
+              setEditInspectorDetails(null);
+              setOpenAddInspectorDialog(true);
             }}
           >
-           Add Inspector
+            Add Inspector
           </Button>
         )}
       />
 
-      <AssignAuditorDialog open={openAssignAuditorDialog} onClose={() => setOpenAssignAuditorDialog(false)}
-        selectedAuditor={selectedAuditor}
-      />
+      {openAssignInspectorDialog && <AssignInspectorDialog open={openAssignInspectorDialog} onClose={() => setOpenAssignInspectorDialog(false)}
+        selectedInspector={selectedInspector}
+      />}
 
       <UpsertUserDetailsDialog
-        open={openAddAuditorDialog}
-        onClose={() => setOpenAddAuditorDialog(false)}
-        onSubmit={(values, actions) => handleAddAuditor(values, actions)}
-        editUser={editAuditorDetails}
+        open={openAddInspectorDialog}
+        onClose={() => setOpenAddInspectorDialog(false)}
+        onSubmit={(values, actions) => handleAddInspector(values, actions)}
+        editUser={editInspectorDetails}
         role='Inspector'
       />
 
       <ActionConfirmationDialog
-        open={openDeleteAuditor}
-        onClose={() => setOpenDeleteAuditor(false)}
+        open={openDeleteInspector}
+        onClose={() => setOpenDeleteInspector(false)}
         title="Delete Inspector"
         color='red'
         ActionConfirmationText="Are  you sure , you want to delete this Inspector?"
         actionButtonText="Yes delete !"
         actionCancellationText="No"
-        onSubmit={() => handleDeleteAuditor()}
+        onSubmit={() => handleDeleteInspector()}
       />
     </>
   );
