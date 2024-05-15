@@ -46,10 +46,15 @@ const startupSchema = new mongoose.Schema({
   dob: { type: Date, default: "" },
   expreince: { type: String },
   cnicFront: { type: String },
+  isCNICFrontVerified: { type: Boolean, default: false },
   cnicBack: { type: String },
+  isCNICBackVerified: { type: Boolean, default: false },
   elctircityBill: { type: String },
+  isElctircityBillVerified: { type: Boolean, default: false },
   utilityBill: { type: String },
+  isUtilityBillVerified: { type: Boolean, default: false },
   recentImage: { type: String },
+  isRecentImageVerified: { type: Boolean, default: false },
   status: { type: Boolean, required: true, default: false },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
   auditorId: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
@@ -58,7 +63,8 @@ const startupSchema = new mongoose.Schema({
   phases: [{
     phaseNumber: { type: Number, required: true },
     deadline: { type: Date, required: true },
-    targetSale: { type: Number, required: true }
+    targetSale: { type: Number, required: true },
+    isActive: { type: Boolean, required: true },
   }]
 });
 
@@ -73,14 +79,6 @@ const auditSchema = new mongoose.Schema({
   issue: { type: String },
   status: { type: String },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-});
-const salesSchema = new mongoose.Schema({
-  Date: { type: String, default: "" },
-  sales: { type: Number },
-  startup: { type: String, default: "" },
-  startupId: { type: mongoose.Schema.Types.ObjectId, ref: "startup" },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'order' }
 });
 
 // Articles Schema
@@ -151,13 +149,22 @@ const orderSchema = new mongoose.Schema({
   address: { type: String, default: "" },
   status: {
     type: String,
-    enum: ["Pending", "Confirmed", "Shipped", "Delivered"],
+    enum: ["Pending", "Confirmed", "Shipped", "Delivered", "Processed"],
     default: "Pending",
   },
   orderDate: { type: Date, default: Date.now },
   totalPayment: { type: Number, required: true },
 });
 
+// startupSales schema
+const salesSchema = new mongoose.Schema({
+  Date: { type: String, default: "" },
+  sales: { type: Number },
+  startup: { type: String, default: "" },
+  startupId: { type: mongoose.Schema.Types.ObjectId, ref: "startup" },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'order' }
+});
 //Auditor startup schema
 const auditStartupSchema = new mongoose.Schema({
   auditorId: {
@@ -189,6 +196,36 @@ const auditStartupSchema = new mongoose.Schema({
     required: true,
   },
 });
+// Inspect Schema
+const inspectStartupSchema = new mongoose.Schema({
+  inspectorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "user",
+  },
+  startups: [
+    {
+      startupTypeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "startup",
+      },
+      date: {
+        type: String,
+        default: "",
+      },
+    },
+  ],
+  inspectionDate: {
+    type: String,
+    default: "",
+  },
+  result: { type: String },
+  status: {
+    type: String,
+    required: true,
+  },
+});
 
 //donation schema
 
@@ -204,7 +241,40 @@ const donateSchema = new mongoose.Schema({
   securityCode: { type: String, required: true },
   donationAmount: { type: Number, required: true },
 });
-
+const startupSalesAuditSchema = new mongoose.Schema({
+  products: [
+    {
+      variants: [
+        {
+          orderedQuantity: { type: Number, required: true },
+          size: { type: String },
+          quantitySold: { type: Number },
+          quantityLeft: { type: Number },
+          quantityDifference: { type: Number },
+        },
+      ],
+    },
+  ],
+  auditorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "user",
+    required: true,
+  },
+  auditDate: { type: Date, default: Date.now },
+  startupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "startup",
+    required: true,
+  },
+  auditorFeedback: { type: String },
+  status: { type: String, required: true },
+  result: { type: String },
+  revenue: { type: Number },
+  sales: { type: String },
+  salasDataReport: { type: String },
+  actualSalesReport: { type: String },
+  issue: { type: String },
+});
 const User = mongoose.model("user", userSchema);
 const Inventory = mongoose.model("inventory", inventorySchema);
 const Startup = mongoose.model("startup", startupSchema);
@@ -216,6 +286,11 @@ const Sales = mongoose.model("startupsales", salesSchema);
 const Startuptype = mongoose.model("startuptype", startupTypeSchema);
 const AuditStartup = mongoose.model("auditStartup", auditStartupSchema);
 const Donate = mongoose.model("donations", donateSchema);
+const InspectStartupSchema = mongoose.model("inspectStartupSchema", inspectStartupSchema);
+const StartUpSalesAudit = mongoose.model(
+  "startupSalesAudit",
+  startupSalesAuditSchema
+);
 
 module.exports = {
   User,
@@ -229,4 +304,6 @@ module.exports = {
   Startuptype,
   AuditStartup,
   Donate,
+  StartUpSalesAudit,
+  InspectStartupSchema
 };
