@@ -10,13 +10,20 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Select,
   TextField,
+  Grid,
+  MenuItem,
+  InputLabel,
+  FormControl,
   Typography,
 } from '@mui/material';
 import React, { useContext, useState } from 'react';
 import { Post_UploadImage_URL } from 'src/constants/apiURLs';
 import { useSnackbar } from 'notistack';
 import { SupplierContext } from './PlaceOrder';
+import cityList from 'src/utils/cities.js'
+
 
 function PlaceOrderDialog({ open, onClose, onOrderPlaced }) {
   const [accountNumber, setAccountNumber] = useState();
@@ -26,7 +33,6 @@ function PlaceOrderDialog({ open, onClose, onOrderPlaced }) {
   const [receiptImage, setReceiptImage] = useState();
   const [location, setLocation] = useState();
   const selectedSupplier = useContext(SupplierContext)
-  console.log("jdsfdfdsf", selectedSupplier)
   const handleImageChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -49,7 +55,7 @@ function PlaceOrderDialog({ open, onClose, onOrderPlaced }) {
 
         if (response.ok) {
           const responseData = await response.json();
-          const imageName = responseData.serverFileName; 
+          const imageName = responseData.serverFileName;
           setReceiptImage(imageName);
           // You can also set the image name to a state if needed
           // setImageName(imageName);
@@ -76,11 +82,11 @@ function PlaceOrderDialog({ open, onClose, onOrderPlaced }) {
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="h6">Account Information</Typography>
+          <Typography variant="h5">Account Information</Typography>
           <Box display='flex' alignItems="flex-start" justifyContent="flex-start" flexDirection='column'>
-            <Typography>Supplier Contact Details</Typography>
+            <Typography  variant="h6">Supplier Contact Details</Typography>
             <Typography>Name: {selectedSupplier?.firstName + ' ' + selectedSupplier?.lastName} </Typography>
-            <Typography>Account Number: {selectedSupplier?.phone} </Typography>
+            <Typography>JazzCash/Easypaisa: {selectedSupplier?.phone} </Typography>
           </Box>
           <br />
           <br />
@@ -110,16 +116,33 @@ function PlaceOrderDialog({ open, onClose, onOrderPlaced }) {
           />
           <br />
           <br />
-          <TextField
-            label="Location"
-            variant="outlined"
-            id="name"
-            size="small"
-            fullWidth
-            sx={{ width: '100%' }}
-            name="name"
-            onChange={(e) => setLocation(e.target.value)}
-          />
+          <Grid item xs={12} sm={12} md={12} lg={12}>
+            {/* <FormControl fullWidth error={Boolean(touched.city && errors.city)}> */}
+            
+            <InputLabel shrink>Location</InputLabel>
+          
+            <Select
+              label="Location"
+              variant="outlined"
+              id="name"
+              name="name"
+              // value={value.city}
+              size="small"
+              fullWidth
+              onChange={(e) => setLocation(e.target.value)}
+            // {...getFieldProps('city')}
+            >
+              {cityList.map((city) => (
+                <MenuItem key={city} value={city}>
+                  {city}
+                </MenuItem>
+              ))}
+            </Select>
+            {/* {touched.city && errors.city && (
+                            <FormHelperText>{errors.city}</FormHelperText>
+                          )} */}
+            {/* </FormControl> */}
+          </Grid>
           <br />
           <br />
 
@@ -155,42 +178,42 @@ function PlaceOrderDialog({ open, onClose, onOrderPlaced }) {
               </CardContent>
             </Card>
           )}
-          <br/>
+          <br />
           {
             !(accountNumber && accountTitle && location && receiptImage) ?
-            <Alert severity='error'>Account details are required</Alert>
-             : (
-              <Box display="flex" justifyContent="center">
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<LocalShipping />}
-                style={{
-                  marginTop: '0.5rem',
-                  width: '30%',
-                  padding: '10px',
-                  backgroundColor: '#04B17C',
-                  color: 'white',
-                  borderRadius: '10px',
-                  '&:hover': { backgroundColor: '#04B17C' },
-                }}
-              
-                onClick={() => {
-                  const payload = {
-                    accountNumber: accountNumber,
-                    accountTitle: accountTitle,
-                    recieptImage: receiptImage,
-                    address: location,
-                  };
-                  onOrderPlaced(payload);
-                }}
-              >
-                Place Order
-              </Button>
-            </Box>
-             )
+              <Alert severity='error'>Account details are required</Alert>
+              : (
+                <Box display="flex" justifyContent="center">
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<LocalShipping />}
+                    style={{
+                      marginTop: '0.5rem',
+                      width: '30%',
+                      padding: '10px',
+                      backgroundColor: '#04B17C',
+                      color: 'white',
+                      borderRadius: '10px',
+                      '&:hover': { backgroundColor: '#04B17C' },
+                    }}
+
+                    onClick={() => {
+                      const payload = {
+                        accountNumber: accountNumber,
+                        accountTitle: accountTitle,
+                        recieptImage: receiptImage,
+                        address: location,
+                      };
+                      onOrderPlaced(payload);
+                    }}
+                  >
+                    Place Order
+                  </Button>
+                </Box>
+              )
           }
-        
+
         </DialogContent>
       </Dialog>
     </div>
