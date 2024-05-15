@@ -8,6 +8,7 @@ import { AddStartupTypeDialog } from 'src/sections/@dashboard';
 import { Delete, OfflinePin, Refresh, RemoveRedEye, TipsAndUpdates } from '@mui/icons-material';
 import { ViewStartupDetailsDialog } from '.';
 import ActionConfirmationDialog from 'src/components/ActionConfrimationDialog';
+import ApproveStartupAndCreatePhaseDialog from 'src/components/ApproveStartupAndCreatePhaseDialog';
 
 // Columns
 const columns = [
@@ -37,6 +38,7 @@ const columns = [
 
 function StartupsPage() {
   const role = localStorage.getItem('role')
+  const userId = localStorage.getItem('userId')
   const { enqueueSnackbar } = useSnackbar();
 
   // table State
@@ -90,7 +92,8 @@ function StartupsPage() {
           pageNumber: pagination?.pageIndex,
           searchString: searchString,
           role: role,
-          isInspected: false
+          isInspected: false,
+          inspectorId: userId,
         },
         Post_GetAllStartupsWithPagination_URL,
         (resp) => {
@@ -110,16 +113,19 @@ function StartupsPage() {
       setIsError(true);
       enqueueSnackbar('Something went wrong', { variant: 'error' });
     }
-  }, [pagination.pageSize, pagination.pageIndex, searchString, enqueueSnackbar, role]);
+  }, [pagination.pageSize, pagination.pageIndex, searchString, enqueueSnackbar, role, userId]);
 
   useEffect(() => {
     getAllStartups();
   }, [getAllStartups]);
 
-  const handleApproveStartup = () => {
+  const handleApproveStartup = (phases) => {
     try {
       Post(
-        { startupId: selectedStartupToApprove?._id },
+        {
+          startupId: selectedStartupToApprove?._id,
+          phases: phases
+        },
         Post_ApproveStartup_URL,
         (resp) => {
           setOpenApproveDialog(false)
@@ -156,10 +162,16 @@ function StartupsPage() {
       enqueueSnackbar("We encountered an error! Please try again later", { variant: 'error' });
     }
   };
-  // Add delete button
+  const isStartupReadyToApprove = (startup) => {
+    // check if cnic front and back images are verified, utility bill is verified , recent image is verified and electricity bill is verified
+    if (startup?.isRecentImageVerified && startup?.isCNICFrontVerified && startup?.isCNICBackVerified && startup?.isUtilityBillVerified && startup?.isElctircityBillVerified) {
+      return false;
+    }
+    return true;
+  }
   return (
     <div>
-      {role === 'Inspector' && <Typography variant='h6' m={2}>Recent Startups</Typography>}
+      {role === 'Inspector' && <Typography variant='h6' m={2}>Inspector Startups</Typography>}
       <MaterialReactTable
         displayColumnDefOptions={{
           'mrt-row-actions': {
@@ -191,6 +203,7 @@ function StartupsPage() {
               <IconButton
                 color="info"
                 onClick={() => {
+                  // alert(isStartupReadyToApprove(row?.original))
                   setSelectedStartupToView(row?.original);
                   setViewStartupDetails(true);
                 }}
@@ -230,7 +243,8 @@ function StartupsPage() {
                 <Tooltip arrow placement="right" title="Approve">
                   <IconButton
                     color="success"
-                    onClick={() => {
+                    disabled={isStartupReadyToApprove(row?.original)}
+                    onClick={() => { 
                       setSelectedStartupToApprove(row?.original)
                       setOpenApproveDialog(true);
                     }}
@@ -291,14 +305,23 @@ function StartupsPage() {
         )}
       />
 
-      <AddStartupTypeDialog open={openStartupTypeDialog} onClose={() => setOpenStartupTypeDialog(false)} />
+      <AddStartupTypeDialog
+        open={openStartupTypeDialog}
+        onClose={() => setOpenStartupTypeDialog(false)}
+      />
       <ViewStartupDetailsDialog
         open={viewStartupDetails}
         onClose={() => setViewStartupDetails(false)}
         startupDetails={selectedStartupToView}
+        onStatusImageStatusChange={()=>getAllStartups()}
       />
-
-      <ActionConfirmationDialog
+      <ApproveStartupAndCreatePhaseDialog
+        open={openApproveDialog}
+        onClose={() => setOpenApproveDialog(false)}
+        onSubmit={(phases) => handleApproveStartup(phases)}
+        existingPhases={selectedStartupToApprove?.phases}
+      />
+      {/* <ActionConfirmationDialog
         open={openApproveDialog}
         onClose={() => setOpenApproveDialog(false)}
         title="Approve Startup"
@@ -307,7 +330,7 @@ function StartupsPage() {
         actionButtonText="Yes !"
         actionCancellationText="No"
         onSubmit={() => handleApproveStartup()}
-      />
+      /> */}
       <ActionConfirmationDialog
         open={openDeleteStartup}
         onClose={() => setOpenDeleteStartup(false)}
