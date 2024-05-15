@@ -1,103 +1,94 @@
-import { Formik } from 'formik';
+import { CircularProgress, Typography } from '@mui/material';
 import { MaterialReactTable } from 'material-react-table';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Post } from 'src/actions/API/apiActions';
+import { Post_GetAllStartUpSalesAuditsWithPagination_URL } from 'src/constants/apiURLs';
 
 function PlaceAudit(props) {
   // Columns
   const columns = [
     {
-      accessorKey: 'id',
-      header: 'ID',
+      accessorKey: 'startupId.firstName',
+      header: 'Fisrt Name',
       size: 40,
     },
     {
-      accessorKey: 'startup',
+      accessorKey: 'startupId.lastName',
+      header: 'Last Name',
+      size: 40,
+    },
+    {
+      accessorKey: 'startupId.startupType',
       header: 'Startup Name',
       size: 40,
     },
     {
-      accessorKey: 'fullName',
+      accessorKey: 'startupId.address',
       header: 'Owner Name',
       size: 40,
     },
     {
-      accessorKey: 'phone',
-      header: 'Phone',
+      accessorKey: 'auditorFeedback',
+      header: 'Feedback',
       size: 40,
     },
     {
-      accessorKey: 'address',
-      header: 'Address',
+      accessorKey: 'auditDate',
+      header: 'Audit Date',
       size: 40,
     },
   ];
-  const generateDummyData = (count) => {
-    const data = [];
-    for (let i = 0; i < count; i++) {
-      data.push({
-        id: i + 1,
-        startup: `Startup ${i + 1}`,
-        fullName: `User ${i + 1}`,
-        phone: '123456789',
-        address: 'Address',
-      });
+  const userId = localStorage.getItem('userId');
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [searchString, setSearchString] = useState('');
+  const [data, setData] = useState([]);
+  const [totalRowCount, setTotalRowCount] = useState(0);
+  const [loadingData, setLoadingData] = useState(false);
+  const getAllPlacedAudits = useCallback(() => {
+
+    setLoadingData(true);
+    try {
+      Post(
+        {
+          auditorId: userId,
+          pageSize: pagination?.pageSize,
+          pageNumber: pagination?.pageIndex,
+          searchString: searchString,
+        },
+        Post_GetAllStartUpSalesAuditsWithPagination_URL,
+        (resp) => {
+          setData(resp?.data?.audits);
+          setTotalRowCount(resp?.data?.totalCount);
+        },
+        (error) => {
+          console.error(error);
+        },
+        () => {
+          setLoadingData(false);
+        }
+      );
+    } catch (error) {
+      console.error(error);
     }
-    return data;
-  };
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10); // Number of rows per page
-  const [totalRowCount] = useState(50); // Total number of rows
+  }, [pagination, searchString, userId]);
 
-  // Calculate start and end indices for pagination
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalRowCount);
-
-  // Generate dummy data for the current page
-  const data = generateDummyData(endIndex - startIndex);
-
+  useEffect(() => {
+    getAllPlacedAudits();
+  }
+    , [getAllPlacedAudits]);
   return (
     <div>
-      {/* <Formik
-        initialValues={{
-          auditorId: '',
-          startupTypeIds: '',
-          date: '',
-          result: '',
-          revenue: '',
-          status: '',
-        }}
-        onSubmit={async (values, { resetForm }) => {
-          try {
-            await axios.post('/api/auditstartup', values);
-            resetForm();
-            fetchAuditStartups();
-          } catch (error) {
-            console.error('Error creating audit startup:', error);
-          }
-        }}
-      >
-        {({ isSubmitting }) => (
-          <Form>
-            <Field
-              name="auditorId"
-              type="text"
-              label="Auditor ID"
-              as={TextField}
-              fullWidth
-              margin="normal"
-            />
-      
-            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
-              Create Audit Startup
-            </Button>
-          </Form>
-        )}
-      </Formik> */}
       <Helmet>
         <title> Place Audit | SE</title>
       </Helmet>
       <br />
+      <Typography variant="h4" gutterBottom>
+        Placed Audit
+      </Typography>
       <MaterialReactTable
         columns={columns}
         data={data}
@@ -110,31 +101,34 @@ function PlaceAudit(props) {
           },
         }}
         // enableRowActions
-        manualPagination
         rowCount={totalRowCount}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={(newPage) => setCurrentPage(newPage)}
+        manualPagination
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        onSearch={(searchString) => setSearchString(searchString)}
+        state={{
+          pagination,
+        }}
         positionToolbarAlertBanner="bottom"
-        // renderRowActions={({ row, table }) => (
-        //   <Box sx={{ display: 'flex', gap: '1rem' }}>
-        //     <Tooltip arrow placement="left" title="Edit">
-        //       <IconButton color='info' onClick={() => {}}>
-        //         <Edit />
-        //       </IconButton>
-        //     </Tooltip>
-        //     <Tooltip arrow placement="right" title="Delete">
-        //       <IconButton color="error" onClick={() => {}}>
-        //         <Delete />
-        //       </IconButton>
-        //     </Tooltip>
-        //   </Box>
-        // )}
-        // renderTopToolbarCustomActions={() => (
-        //   <Button variant='contained'>
-        //     Add New Donor
-        //   </Button>
-        // )}
+      // renderRowActions={({ row, table }) => (
+      //   <Box sx={{ display: 'flex', gap: '1rem' }}>
+      //     <Tooltip arrow placement="left" title="Edit">
+      //       <IconButton color='info' onClick={() => {}}>
+      //         <Edit />
+      //       </IconButton>
+      //     </Tooltip>
+      //     <Tooltip arrow placement="right" title="Delete">
+      //       <IconButton color="error" onClick={() => {}}>
+      //         <Delete />
+      //       </IconButton>
+      //     </Tooltip>
+      //   </Box>
+      // )}
+      // renderTopToolbarCustomActions={() => (
+      //   <Button variant='contained'>
+      //     Add New Donor
+      //   </Button>
+      // )}
       />
     </div>
   );
