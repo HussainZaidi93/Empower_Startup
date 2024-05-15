@@ -11,12 +11,17 @@ import {
   Snackbar,
   Alert,
   CardMedia,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Badge,
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Post } from 'src/actions/API/apiActions';
 import { useSnackbar } from 'notistack';
 import { Post_CreateOrder_URL, Post_GetAllProducts_URL, baseURL } from 'src/constants/apiURLs';
 import { PlaceOrderDialog, ShowVariantsDialog } from '.';
+import ShoppingCartIconWithBadge from 'src/components/ShoppingCartIconWithBadge';
 
 function OrderProducts({ supplierId }) {
   const { enqueueSnackbar } = useSnackbar();
@@ -32,6 +37,8 @@ function OrderProducts({ supplierId }) {
   const [productsToShow, setproductsToShow] = useState(null);
   const [openShowProductDialog, setopenShowProductDialog] = useState(false);
 
+  // open Cart State
+  const [openCart, setOpenCart] = useState(false)
   const getAllProducts = useCallback(() => {
     try {
       Post(
@@ -49,7 +56,6 @@ function OrderProducts({ supplierId }) {
           setQuantities(initialQuantities);
         },
         (error) => {
-          console.log('errr', error);
           enqueueSnackbar('Can not load products', { variant: 'error' });
         }
       );
@@ -111,6 +117,7 @@ function OrderProducts({ supplierId }) {
           Post_CreateOrder_URL,
           (resp) => {
             setOpenConfirmOrderDialog(false);
+            setOpenCart(false)
             setAddedToCart([]);
             enqueueSnackbar('Your order has been placed', { variant: 'success' });
           },
@@ -151,8 +158,9 @@ function OrderProducts({ supplierId }) {
         flexDirection: 'column',
       }}
     >
-      <Box display="flex" justifyContent="space-between">
         <Typography variant="h5">Products Catalog</Typography>
+      <Box display="flex" justifyContent="flex-end">
+        <ShoppingCartIconWithBadge itemCount={addedToCart?.length} onClick={() => setOpenCart(true)} />
         <div style={{ display: 'flex' }}>
           <TextField
             variant="outlined"
@@ -174,7 +182,6 @@ function OrderProducts({ supplierId }) {
       <Grid container spacing={2}>
         {products.map((product) => (
           <Grid key={product._id} item xs={12} sm={6} md={4} lg={3}>
-            {console.log('jhdafdfsdf', `${baseURL}/uploads/${product.variants[0].image}`)}
             <Card
               sx={{
                 position: 'relative',
@@ -184,7 +191,7 @@ function OrderProducts({ supplierId }) {
               }}
             >
               <CardContent>
-                <img src={`${baseURL}/uploads/${product.variants[0].image}`} alt="product image" style={{height :'200px', width :'100%'}} />
+                <img src={`${baseURL}/uploads/${product.variants[0].image}`} alt="product image" style={{ height: '200px', width: '100%' }} />
                 <Typography variant="h6" sx={{ marginBottom: 1 }}>
                   {product?.productName}
                 </Typography>
@@ -210,7 +217,6 @@ function OrderProducts({ supplierId }) {
                       marginTop: '1rem',
                     }}
                     onClick={() => {
-                      console.log('hjgdsfdsfdsf', product);
                       setproductsToShow(product);
                       setopenShowProductDialog(true);
                     }}
@@ -235,64 +241,73 @@ function OrderProducts({ supplierId }) {
       </Grid>
       <br />
       <>
-        {addedToCart.length > 0 && (
-          <>
-            <Typography variant="h5">Products added to cart:</Typography>
-            {addedToCart.map((cartItem, index) => (
-              <Card key={index} style={{ marginTop: '20px', padding: '10px' }}>
-                <CardContent>
-                  <Typography variant="h6">{`Product Name: ${cartItem.productName}`}</Typography>
-                  <Typography>{`Category: ${cartItem.category}`}</Typography>
-                  <Typography>{`Total Price: ${cartItem.totalPrice}`}</Typography>
-                  <Grid container spacing={2}>
-                    {cartItem.variants
-                      .filter((variant) => variant.quantity > 0)
-                      .map((variant, variantIndex) => (
-                        <Grid item xs={12} sm={6} md={4} key={variantIndex}>
-                          <Card style={{ padding: '10px', backgroundColor: '#f0f0f0' }}>
-                            <CardContent>
-                              <Typography>{`Variant Size: ${variant.size}`}</Typography>
-                              <Typography>{`Variant Quantity: ${variant.quantity}`}</Typography>
-                              <Typography>{`Variant Price: ${variant.price} * ${variant.quantity} = ${
-                                variant.price * variant.quantity
-                              }`}</Typography>
-                              <Button
-                                variant="outlined"
-                                color="error"
-                                onClick={() => handleRemoveFromCart(variant._id)}
-                              >
-                                Remove
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      ))}
-                  </Grid>
-                </CardContent>
-              </Card>
-            ))}
-            <Box display="flex" justifyContent="center">
-              <Button
-                sx={{
-                  backgroundColor: '#04B17C',
-                  color: 'white',
-                  padding: '10px',
-                  '&:hover': {
-                    backgroundColor: '#04B17C',
-                  },
-                  fontSize: '13px',
-                  width: '20ch',
-                  marginLeft: '1rem',
-                }}
-                color="primary"
-                onClick={() => setOpenConfirmOrderDialog(true)}
-                style={{ marginTop: '10px' }}
-              >
-                Place Order
-              </Button>
-            </Box>
-          </>
-        )}
+        {/* Create a Cart Dialog */}
+
+        <Dialog open={openCart} onClose={() => setOpenCart(false)} fullWidth>
+          <DialogTitle>Your Cart</DialogTitle>
+          <DialogContent>
+            {addedToCart.length > 0 && (
+              <>
+                <Typography variant="h5">Products added to cart:</Typography>
+                {addedToCart.map((cartItem, index) => (
+                  <Card key={index} style={{ marginTop: '20px', padding: '10px' }}>
+                    <CardContent>
+                      <Typography variant="h6">{`Product Name: ${cartItem.productName}`}</Typography>
+                      <Typography>{`Category: ${cartItem.category}`}</Typography>
+                      <Typography>{`Total Price: ${cartItem.totalPrice}`}</Typography>
+                      <Grid container spacing={2}>
+                        {cartItem.variants
+                          .filter((variant) => variant.quantity > 0)
+                          .map((variant, variantIndex) => (
+                            <Grid item xs={12} sm={6} md={6} key={variantIndex}>
+                              <Card style={{ padding: '10px', backgroundColor: '#f0f0f0' }}>
+                                <CardContent>
+                                  <Typography>{`Size: ${variant.size}`}</Typography>
+                                  <Typography>{`Quantity: ${variant.quantity}`}</Typography>
+                                  <Typography>{`Price: ${variant.price} * ${variant.quantity} = ${variant.price * variant.quantity
+                                    }`}</Typography>
+                                  <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={() => handleRemoveFromCart(variant._id)}
+                                  >
+                                    Remove
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          ))}
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Box display="flex" justifyContent="center">
+                  <Button
+                    sx={{
+                      backgroundColor: '#04B17C',
+                      color: 'white',
+                      padding: '10px',
+                      '&:hover': {
+                        backgroundColor: '#04B17C',
+                      },
+                      fontSize: '13px',
+                      width: '20ch',
+                      marginLeft: '1rem',
+                    }}
+                    color="primary"
+                    onClick={() => setOpenConfirmOrderDialog(true)}
+                    style={{ marginTop: '10px' }}
+                  >
+                    Place Order
+                  </Button>
+                </Box>
+              </>
+            )}
+          </DialogContent>
+
+        </Dialog>
+
+
       </>
       <br />
 
