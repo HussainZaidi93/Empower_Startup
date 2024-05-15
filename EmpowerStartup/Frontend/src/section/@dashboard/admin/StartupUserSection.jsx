@@ -104,7 +104,6 @@ export default function StartupUserSection() {
   }, [getAllStartupUsers]);
 
   const handleUserStatusToggle = (user, status) => {
-    console.log("user", user);
     try {
       Post(
         { userId: user, status: status },
