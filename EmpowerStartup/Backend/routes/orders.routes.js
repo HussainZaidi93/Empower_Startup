@@ -4,7 +4,7 @@ module.exports = (app) => {
     var router = require("express").Router();
     router.post("/createOrder", orderController.createOrder);
     router.get("/getAllOrdersWithStatus", orderController.getAllOrdersWithStatus);
-    router.get("/getOrdersBySupplierId", orderController.getOrdersBySupplierId);
+    router.post("/getOrdersBySupplierId", orderController.getOrdersBySupplierId);
     router.post("/changeStatus", orderController.changeStatus);
     router.post("/getAllOrderBySupplierWithPagination", orderController.getAllOrderBySupplierWithPagination);
     router.post("/getAllOrderByUserWithPagination", orderController.getAllOrderByUserWithPagination);
