@@ -48,7 +48,6 @@ function OrderProducts({ supplierId }) {
           setQuantities(initialQuantities);
         },
         (error) => {
-          console.log('errr', error);
           enqueueSnackbar('Can not load products', { variant: 'error' });
         }
       );
@@ -135,7 +134,6 @@ function OrderProducts({ supplierId }) {
     const message = `Added ${quantity} of ${productToAdd.productName} to cart`;
     setSnackbarMessage(message);
     setSnackbarOpen(true);
-    console.log(message);
   };
 
   // Function to extract product info from products array based on _id
@@ -193,7 +191,6 @@ function OrderProducts({ supplierId }) {
     >
       <Box display="flex" justifyContent="space-between">
         <Typography variant="h5">Products Catalog</Typography>
-        {console.log('quanrew', addedToCart)}
         <div style={{ display: 'flex' }}>
           <TextField
             variant="outlined"
@@ -301,7 +298,6 @@ function OrderProducts({ supplierId }) {
       <Grid container spacing={2}>
         {addedToCart.map((item) => {
           const product = getProductInfo(item._id);
-          console.log('prodsdasdf', addedToCart, overallTotal);
           return (
             <Grid key={product._id} item xs={12} sm={6} md={4} lg={3}>
               <Card
