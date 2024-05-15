@@ -64,7 +64,6 @@ function OrderDetails(props) {
         },
         Post_GetAllOrderByUserWithPagination_URL,
         (resp) => {
-          console.log('hjsdfsdfdsf', resp.data);
           setRows(resp.data.orders);
           setIsError(false);
           setLoadingData(false);
