@@ -55,7 +55,6 @@ exports.register = async (req, res, next) => {
       isAdminApproved,
       isVarified
     } = req.body;
-    console.log("jksgdfsdfsdf", req.body)
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
@@ -218,7 +217,6 @@ exports.getUserById = async (req, res) => {
 //     if(user.role==='Supplier'){
 //       startup = await Startuptype.find(user.startTypeId);
 //     }
-//     console.log(startup);
 
 //     res.status(200).json({
 //       _id: user._id,
@@ -416,7 +414,6 @@ async function getSuppliersByStartupType(userId) {
       return "User not found";
     }
     // const user = await User.findById(userId).populate('Startup');
-    console.log(user);
     const startupType = user.startup.startupType;
 
     // Find products related to the startup type
@@ -470,7 +467,6 @@ exports.listSuppliersForUser = async (req, res) => {
     const type = await Startuptype.findOne({
       startupName: startup.startupType,
     });
-    console.log(startup, type);
     const startupSuppliers = await User.find({
       role: "Supplier",
       startTypeId: type._id,
@@ -478,7 +474,6 @@ exports.listSuppliersForUser = async (req, res) => {
 
     res.json(startupSuppliers);
   } catch (error) {
-    console.log("Error occured in list suppliers", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -514,7 +509,6 @@ exports.sendMessage = async (req, res) => {
     const { email, context, subject, text } = req.body;
 
     const emailSent = await sendJoinUsEmail(email,context, subject, text);
-    console.log('fdsfds3', emailSent);
     // if (!emailSent) {
     //   return res.status(400).json({
     //     message: "Email can not be sent",
