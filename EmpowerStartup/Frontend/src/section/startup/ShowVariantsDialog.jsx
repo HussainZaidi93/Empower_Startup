@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -76,13 +76,20 @@ const ShowVariantsDialog = ({ product, open, onClose, onSubmit }) => {
     const selectedProduct = {
       ...product,
       totalPrice: totalPrice, // Add totalPrice to the selected product
-      variants: selectedVariants,
+      variants: selectedVariants.filter((variant) => variant.quantity > 0),
     };
     onSubmit(selectedProduct);
   };
 
+  // reset values when Dialog is closed
+  // useEffect(() => {
+  //   if (!open) {
+  //     // Reset the selected quantities when the dialog is closed
+  //     setSelectedQuantities(new Array(product.variants.length).fill(0));
+  //   }
+  // }, [open, product.variants.length]);
   return (
-    <Dialog open={open} onClose={onClose} fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between">
           <Typography variant="h4">Product Variants</Typography>
