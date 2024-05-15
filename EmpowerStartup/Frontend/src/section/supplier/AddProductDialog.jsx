@@ -30,7 +30,6 @@ import * as Yup from 'yup';
 const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 function AddProductDialog({ open, onClose, onProductAdded, editProduct }) {
-  console.log('product', editProduct);
   const { enqueueSnackbar } = useSnackbar();
   const [imagePreviews, setImagePreviews] = useState([]);
   const [profileImages, setProfileImages] = useState([]);
@@ -121,7 +120,6 @@ function AddProductDialog({ open, onClose, onProductAdded, editProduct }) {
         enqueueSnackbar('Product details updated successfully', { variant: 'success' });
       }
     } catch (error) {
-      console.log('errr', error);
       enqueueSnackbar('Cannot add product', { variant: 'error' });
       onProductAdded();
     }
@@ -188,7 +186,6 @@ function AddProductDialog({ open, onClose, onProductAdded, editProduct }) {
             initialValues={initialValues}
             validationSchema={ValidationSchema}
             onSubmit={(values, actions) => {
-              console.log("kjdsfdfdsf",values)
               actions.setSubmitting(true);
               values.supplierId = supplierId;
               values.startTypeId = startTypeId;
@@ -197,7 +194,6 @@ function AddProductDialog({ open, onClose, onProductAdded, editProduct }) {
           >
             {({ errors, values, touched, getFieldProps, handleSubmit, isSubmitting, setFieldValue }) => (
               <Form>
-                {console.log("jsdfdsfdsf", values,errors)}
                 <Grid container spacing={2} width="100%">
                   {/* <Grid item xs={12} sm={12} md={6} lg={6}>
                     <Autocomplete
