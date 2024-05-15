@@ -79,7 +79,6 @@ function OrderDetails(props) {
         },
         Post_GetAllOrderBySupplierWithPagination_URL,
         (resp) => {
-          console.log('hjsdfsdfdsf', resp.data);
           setRows(resp.data.orders);
           setIsError(false);
           setLoadingData(false);
@@ -193,7 +192,6 @@ function OrderDetails(props) {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Typography variant="h6">Products:</Typography>
-                {console.log('kjsfsdfdf', selectedOrder)}
                 {selectedOrder?.products?.map((product, index) => (
                   <Card key={index} sx={{ maxWidth: 400 }}>
                     <CardMedia
