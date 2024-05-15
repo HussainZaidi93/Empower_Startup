@@ -21,12 +21,17 @@ import {
   Radio,
   RadioGroup,
   TextField,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormHelperText
 } from '@mui/material';
 import { Form, Formik } from 'formik';
 import { AttachFile } from '@mui/icons-material';
 import { Post_GetAllStartupTypes_URL, Post_UploadImage_URL } from 'src/constants/apiURLs';
 import { Post } from 'src/actions/API/apiActions';
 import * as Yup from 'yup';
+import cityList from 'src/utils/cities.js'; 
 
 const steps = ['Basic info', 'Startup info', 'Documentation'];
 
@@ -68,7 +73,6 @@ export default function StartupApplication({ onSubmit }) {
         {},
         Post_GetAllStartupTypes_URL,
         (resp) => {
-          console.log('ffee', resp.data);
           setStartupTypes(resp?.data.data);
           // enqueueSnackbar('Startup types loaded', {variant : 'success'})
         },
@@ -268,7 +272,7 @@ export default function StartupApplication({ onSubmit }) {
   const ValidationSchema = Yup.object().shape({
     firstName: Yup.string()
       .required('First Name is required')
-      .matches(/^[a-zA-Z\s]+$/, 'First Name should only contain alphabets and spaces'),
+      .matches(/^[a-zA-Z\s]+$/, 'First Name should only contain letters and spaces'),
     lastName: Yup.string()
       .matches(/^[a-zA-Z\s]+$/, 'Last name should only contain letters and spaces')
       .required('Last name is required'),
@@ -286,10 +290,15 @@ export default function StartupApplication({ onSubmit }) {
     startupTypeId: Yup.string().required('Startup type is required'),
     shortDescription: Yup.string()
       .required('Provide a short description.')
-      .min(50, 'Short description must be at least 50 characters long'),
+      .min(70, 'Short description must be at least 70 characters long')
+      .required('Short Descricption is required is required'),
     detailedDescription: Yup.string()
       .required('Provide a detailed description.')
-      .min(100, 'Details description must be at least 100 characters long'),
+      .min(120, 'Details description must be at least 120 characters long')
+      .required('Detail Descricption is required is required'),
+      experience: Yup.string()
+      .matches(/^[a-zA-Z\s]+$/, 'Estimated Location should only contain letters and spaces')
+      .required('Estimated Location is required') 
   });
 
   return (
@@ -343,9 +352,7 @@ export default function StartupApplication({ onSubmit }) {
           {({ errors, touched, handleSubmit, values, setFieldValue, getFieldProps }) => {
             return (
               <Form>
-                {console.log('rerewrewrew', errors)}
                 <Grid container spacing={2} p={5}>
-                  {console.log('values', errors, values)}
                   {activeStep === 0 && (
                     <>
                       <Grid item xs={12} sm={12} md={12} lg={12}>
@@ -418,21 +425,28 @@ export default function StartupApplication({ onSubmit }) {
                         />
                       </Grid>
                       <Grid item xs={12} sm={12} md={12} lg={12}>
-                        <TextField
-                          label="City"
-                          variant="outlined"
-                          id="city"
-                          name="city"
-                          value={values.city}
-                          size="small"
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          fullWidth
-                          error={Boolean(touched.city && errors.city)}
-                          helperText={touched.city && errors.city}
-                          {...getFieldProps('city')}
-                        />
+                        <FormControl fullWidth error={Boolean(touched.city && errors.city)}>
+                          <InputLabel shrink>City</InputLabel>
+                          <Select
+                            label="City"
+                            variant="outlined"
+                            id="city"
+                            name="city"
+                            value={values.city}
+                            size="small"
+                            fullWidth
+                            {...getFieldProps('city')}
+                          >
+                            {cityList.map((city) => (
+                              <MenuItem key={city} value={city}>
+                                {city}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {touched.city && errors.city && (
+                            <FormHelperText>{errors.city}</FormHelperText>
+                          )}
+                        </FormControl>
                       </Grid>
                       <Grid item xs={12} sm={12} md={12} lg={12}>
                         <TextField
@@ -516,7 +530,6 @@ export default function StartupApplication({ onSubmit }) {
                           options={startupTypes}
                           getOptionLabel={(option) => option?.startupName}
                           onChange={(event, newValue) => {
-                            console.log('jhgsdfsdfdsf', newValue);
                             if (newValue) {
                               setFieldValue('startupType', newValue?.startupName);
                               setFieldValue('startupTypeId', newValue?._id);
@@ -579,7 +592,7 @@ export default function StartupApplication({ onSubmit }) {
                       </Grid>
                       <Grid item xs={12} sm={12} md={12} lg={12}>
                         <TextField
-                          label="Previous Experience(if any)"
+                          label="Estimated Startup location"
                           variant="outlined"
                           id="experience"
                           name="experience"
